@@ -1,0 +1,11 @@
+# Created by .ignore support plugin (hsz.mobi)
+
+.DS_Store
+
+.ipynb_checkpoints
+
+.idea/workspace.xml
+.idea/tasks.xml
+
+lightgraph.png
+fit_plot.png
