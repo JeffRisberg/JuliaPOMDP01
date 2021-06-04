@@ -61,7 +61,9 @@ POMDPs.actions(mdp::GridWorld) = [:up, :down, :left, :right];
 
 # transition helpers
 function inbounds(mdp::GridWorld,x::Int64,y::Int64)
-    if 1 <= x <= mdp.size_x && 1 <= y <= mdp.size_y
+    if x == 2 && y == 2
+        return false
+    elseif 1 <= x <= mdp.size_x && 1 <= y <= mdp.size_y
         return true
     else
         return false
@@ -164,7 +166,7 @@ mdp = GridWorld()
 # initialize the solver
 # max_iterations: maximum number of iterations value iteration runs for (default is 100)
 # belres: the value of Bellman residual used in the solver (default is 1e-3)
-solver = ValueIterationSolver(max_iterations=3, belres=1e-3; verbose=true)
+solver = ValueIterationSolver(max_iterations=10, belres=1e-7; verbose=true)
 
 # solve for an optimal policy
 policy = solve(solver, mdp)
@@ -185,3 +187,7 @@ s = GridWorldState(3,1)
 println(action(policy, s))
 println(value(policy, s))
 
+iob = IOBuffer()
+io = IOContext(iob, :limit=>true, :displaysize=>(80, 80))
+show(io, MIME("text/plain"), policy)
+println(String(take!(iob)))
