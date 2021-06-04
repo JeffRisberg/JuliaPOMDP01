@@ -1,3 +1,3 @@
-### Partially Observable Markov Decision Processes in Julia
+### Partially Observable Markov Decision Processes in Julia, example 01
 
 
