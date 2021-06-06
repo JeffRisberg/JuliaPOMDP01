@@ -30,7 +30,7 @@ mutable struct GridWorld <: MDP{GridWorldState, Symbol} # Note that our MDP is p
     reward_states::Vector{GridWorldState} # the states in which agent recieves reward
     reward_values::Vector{Float64} # reward values for those states
     tprob::Float64 # probability of transitioning to the desired state
-    discount_factor::Float64 # disocunt factor
+    discount_factor::Float64 # discount factor
 end
 
 #we use keyworded arguments so we can change any of the values we pass in
@@ -45,7 +45,7 @@ end
 
 # we can now create a GridWorld mdp instance like this:
 mdp = GridWorld()
-mdp.reward_states # mdp contains all the defualt values from the constructor
+mdp.reward_states # mdp contains all the default values from the constructor
 
 function POMDPs.states(mdp::GridWorld)
     s = GridWorldState[] # initialize an array of GridWorldStates
@@ -83,37 +83,36 @@ function POMDPs.transition(mdp::GridWorld, state::GridWorldState, action::Symbol
         return SparseCat([GridWorldState(x, y, true)], [1.0])
     end
 
-    neighbors = [
-        GridWorldState(x+1, y, false), # right
-        GridWorldState(x-1, y, false), # left
-        GridWorldState(x, y-1, false), # down
-        GridWorldState(x, y+1, false), # up
-        ] # See Performance Note below
-
-    targets = Dict(:right=>1, :left=>2, :down=>3, :up=>4) # See Performance Note below
-    target = targets[a]
-
-    probability = fill(0.0, 4)
-
-    if !inbounds(mdp, neighbors[target])
-        # If would transition out of bounds, stay in
-        # same cell with probability 1
-        return SparseCat([GridWorldState(x, y)], [1.0])
-    else
-        probability[target] = mdp.tprob
-
-        oob_count = sum(!inbounds(mdp, n) for n in neighbors) # number of out of bounds neighbors
-
-        new_probability = (1.0 - mdp.tprob)/(3-oob_count)
-
-        for i = 1:4 # do not include neighbor 5
-            if inbounds(mdp, neighbors[i]) && i != target
-                probability[i] = new_probability
-            end
-        end
+    if a == :right
+        target = GridWorldState(x+1, y)
+    elseif a == :left
+        target = GridWorldState(x-1, y)
+    elseif a == :down
+        target = GridWorldState(x, y-1)
+    elseif a == :up
+        target = GridWorldState(x, y+1)
     end
 
-    return SparseCat(neighbors, probability)
+    if !inbounds(mdp, target)
+        # If would transition out of bounds, stay in same cell with probability 1
+        return SparseCat([GridWorldState(x, y)], [1.0])
+    else
+        if a == :right
+            result = [GridWorldState(x+1, y), GridWorldState(x, y+1), GridWorldState(x, y+1)]
+        elseif a == :left
+            result = [GridWorldState(x-1, y), GridWorldState(x, y-1), GridWorldState(x, y-1)]
+        elseif a == :down
+            result = [GridWorldState(x, y-1), GridWorldState(x+1, y), GridWorldState(x-1, y)]
+        elseif a == :up
+            result = [GridWorldState(x, y+1), GridWorldState(x+1, y), GridWorldState(x-1, y)]
+        end
+        result = filter(x -> inbounds(mdp, x), result)
+        probability = [0.8]
+        for i in 2:length(result)
+            append!(probability, [0.1])
+        end
+        return SparseCat(result, probability)
+    end
 end
 
 function POMDPs.reward(mdp::GridWorld, state::GridWorldState, action::Symbol, statep::GridWorldState) #deleted action
@@ -166,7 +165,7 @@ mdp = GridWorld()
 # initialize the solver
 # max_iterations: maximum number of iterations value iteration runs for (default is 100)
 # belres: the value of Bellman residual used in the solver (default is 1e-3)
-solver = ValueIterationSolver(max_iterations=10, belres=1e-7; verbose=true)
+solver = ValueIterationSolver(max_iterations=5, belres=1e-7; verbose=true)
 
 # solve for an optimal policy
 policy = solve(solver, mdp)
