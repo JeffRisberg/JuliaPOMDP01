@@ -1,3 +1,6 @@
-### Partially Observable Markov Decision Processes in Julia, example 01
+### Partially Observable Markov Decision Processes in Julia, repo 01
+
+Using SISL libraries.
+
 
 
